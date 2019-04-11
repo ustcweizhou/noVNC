@@ -33,6 +33,7 @@ REAL_NAME="$(readlink -f $0)"
 HERE="$(cd "$(dirname "$REAL_NAME")" && pwd)"
 PORT="6080"
 VNC_DEST="localhost:5900"
+VNC_PASSWORD=""
 CERT=""
 WEB=""
 proxy_pid=""
@@ -62,6 +63,7 @@ while [ "$*" ]; do
     case $param in
     --listen)  PORT="${OPTARG}"; shift            ;;
     --vnc)     VNC_DEST="${OPTARG}"; shift        ;;
+    --vnc-password) VNC_PASSWORD="${OPTARG}"; shift        ;;
     --cert)    CERT="${OPTARG}"; shift            ;;
     --web)     WEB="${OPTARG}"; shift            ;;
     --ssl-only) SSLONLY="--ssl-only"             ;;
@@ -133,7 +135,7 @@ else
     if [[ $? -ne 0 ]]; then
         echo "No installed websockify, attempting to clone websockify..."
         WEBSOCKIFY=${HERE}/websockify/run
-        git clone https://github.com/novnc/websockify ${HERE}/websockify
+        git clone https://github.com/ustcweizhou/websockify ${HERE}/websockify
 
         if [[ ! -e $WEBSOCKIFY ]]; then
             echo "Unable to locate ${HERE}/websockify/run after downloading"
@@ -148,7 +150,7 @@ fi
 
 echo "Starting webserver and WebSockets proxy on port ${PORT}"
 #${HERE}/websockify --web ${WEB} ${CERT:+--cert ${CERT}} ${PORT} ${VNC_DEST} &
-${WEBSOCKIFY} ${SSLONLY} --web ${WEB} ${CERT:+--cert ${CERT}} ${PORT} ${VNC_DEST} ${RECORD_ARG} &
+${WEBSOCKIFY} ${SSLONLY} --web ${WEB} ${CERT:+--cert ${CERT}} ${PORT} ${VNC_DEST} ${VNC_PASSWORD:+--vnc-password ${VNC_PASSWORD}} ${RECORD_ARG} &
 proxy_pid="$!"
 sleep 1
 if ! ps -p ${proxy_pid} >/dev/null; then
