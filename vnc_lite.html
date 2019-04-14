@@ -57,10 +57,21 @@
             padding: 5px 5px 4px 5px;
             cursor: pointer;
         }
+        #virtualKeyboard {
+            position: fixed;
+            top: 0px;
+            right: 200px;
+            border: 1px outset;
+            padding: 5px 5px 4px 5px;
+            cursor: pointer;
+         }
 
         #screen {
             flex: 1; /* fill remaining space */
             overflow: hidden;
+        }
+        #screen div {
+            height: 450px !important;
         }
 
     </style>
@@ -83,11 +94,15 @@
     </script>
 
     <script src="core/keymap.js"></script>
+    <script src="jquery-3.3.1.min.js"></script>
+    <script src="keyboard.js"></script>
+    <link rel="stylesheet" type="text/css" href="keyboard-small.css">
 
     <!-- actual script modules -->
     <script type="module" crossorigin="anonymous">
         // RFB holds the API to connect and communicate with a VNC server
         import RFB from './core/rfb.js';
+        import KeyTable from "./core/input/keysym.js";
 
         let rfb;
         let desktopName;
@@ -203,6 +218,101 @@
         // Set parameters that can be changed on an active connection
         rfb.viewOnly = readQueryVariable('view_only', false);
         rfb.scaleViewport = readQueryVariable('scale', false);
+
+        // Send keyboard event to RFB
+        var isCtrlPressed = false;
+        var isAltPressed = false;
+        function releaseCtrlAlt() {
+            if (isAltPressed) {
+                rfb.sendKey(KeyTable.XK_Alt_L, "AltLeft", false);
+                isAltPressed = false;
+            }
+            if (isCtrlPressed) {
+                rfb.sendKey(KeyTable.XK_Control_L, "ControlLeft", false);
+                isCtrlPressed = false;
+            }
+        }
+        function sendCtrlAlt(up) {
+            if (isCtrlPressed) {
+                rfb.sendKey(KeyTable.XK_Control_L, "ControlLeft", true);
+            }
+            if (isAltPressed) {
+                rfb.sendKey(KeyTable.XK_Alt_L, "AltLeft", up);
+            }
+        }
+        $(document).keyboard({
+            language: 'us:EN, dutch:NL, german: DE, belgian: BE',
+            altKey: function () {
+                isAltPressed = !isAltPressed;
+            },
+            arrowUpKey: function () {
+                sendCtrlAlt(true);
+                rfb.sendKey(KeyTable.XK_KP_Up, "ArrowUp", true);
+                releaseCtrlAlt();
+            },
+            arrowDownKey: function () {
+                sendCtrlAlt(true);
+                rfb.sendKey(KeyTable.XK_KP_Down, "ArrowDown", true);
+                releaseCtrlAlt();
+            },
+            arrowLeftKey: function () {
+                sendCtrlAlt(true);
+                rfb.sendKey(KeyTable.XK_KP_Left, "ArrowLeft", true);
+                releaseCtrlAlt();
+            },
+            arrowRightKey: function () {
+                sendCtrlAlt(true);
+                rfb.sendKey(KeyTable.XK_KP_Right, "ArrowRight", true);
+                releaseCtrlAlt();
+            },
+            backspaceKey: function () {
+                sendCtrlAlt(true);
+                rfb.sendKey(KeyTable.XK_BackSpace, "Backspace", true);
+                releaseCtrlAlt();
+            },
+            ctrlKey: function () {
+                isCtrlPressed = !isCtrlPressed;
+            },
+            deleteKey: function () {
+                sendCtrlAlt(true);
+                rfb.sendKey(KeyTable.XK_KP_Delete, "Delete", true);
+                releaseCtrlAlt();
+            },
+            enterKey: function () {
+                sendCtrlAlt(true);
+                rfb.sendKey(KeyTable.XK_KP_Enter, "Enter", true);
+                releaseCtrlAlt();
+            },
+            escapeKey: function () {
+                sendCtrlAlt(true);
+                rfb.sendKey(KeyTable.XK_Escape, "Escape", true);
+                rfb.sendKey(KeyTable.XK_Escape, "Escape", false);
+                releaseCtrlAlt();
+            },
+            insertKey: function () {
+                sendCtrlAlt(true);
+                rfb.sendKey(KeyTable.XK_KP_Insert, "Insert", true);
+                releaseCtrlAlt();
+            },
+            tabKey: function () {
+                sendCtrlAlt(true);
+                rfb.sendKey(KeyTable.XK_KP_Tab, "Tab", true);
+                releaseCtrlAlt();
+            },
+            defaultKeyAction: function (key) {
+                sendCtrlAlt(true);
+                rfb.sendString(key);
+                releaseCtrlAlt();
+            },
+            inputType: 'none',
+            elementId: 'virtualKeyboard',
+            directEnter: true,
+            allowEnterAccept: false,
+            allowEscapeCancel: false,
+            showSelectedLanguage: true,
+            keyboardPosition: 'bottom'
+        });
+
     </script>
 </head>
 
@@ -211,6 +321,7 @@
         <div id="status">Loading</div>
         <div id="sendCtrlAltDelButton">Send CtrlAltDel</div>
         <div id="clipboardButton">Clipboard</div>
+        <div id="virtualKeyboard">Open Keyboard</div>
     </div>
     <div id="screen">
         <!-- This is where the remote screen will appear -->
